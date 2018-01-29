@@ -3,7 +3,6 @@
 #include <cs50.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h> // remove
 #include <math.h>
 
 #include "helpers.h"
@@ -11,10 +10,10 @@
 // Converts a fraction formatted as X/Y to eighths
 int duration(string fraction)
 {
-    // parse & return numerator
-    // return atoi(strtok(fraction, "/"));
-    printf("fraction: %s\n", fraction);
-    return 1;
+    // parse string fraction & return number of eigths
+    int numerator = atoi(strtok(fraction, "/"));
+    int denominator = atoi(strtok(NULL, "/"));
+    return numerator * 8 / denominator;
 }
 
 // Calculates frequency (in Hz) of a note
@@ -82,17 +81,19 @@ int frequency(string note)
     float semitones = octave_diff + letter_diff + accident_diff;
 
     // frequency = 2^(n / 12) * 440, where n is # of semitones from A4
-    return pow(2, semitones / 12) * 440;
+    return round(pow(2, semitones / 12) * 440);
 }
 
 // Determines whether a string represents a rest
 bool is_rest(string s)
 {
-    // check if s is empty string, ""
-    printf("is rest: %s\n", s);
-    if (s[0] == '\n')
+    // check if s is empty string, e.g., ""
+    if (!strlen(s))
     {
         return true;
     }
-    return false;
+    else
+    {
+        return false;
+    }
 }
