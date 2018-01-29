@@ -42,7 +42,8 @@ int frequency(string note)
     // semitones from A4 to Y4
     // use switch since letters are out-of-order & inconsistent in music T.T
     int letter_diff = 0;
-    switch(letter) {
+    switch (letter)
+    {
         case 'A':
             letter_diff = 0;
             break;
