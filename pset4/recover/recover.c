@@ -57,5 +57,9 @@ int main(int argc, char *argv[])
             fwrite(buffer, 1, 512, jpeg_file);
         }
     }
+    if (jpeg_file)
+    {
+        fclose(jpeg_file);
+    }
     return 0;
 }
