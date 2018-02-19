@@ -8,8 +8,10 @@
 // Maximum length for a word
 // (e.g., pneumonoultramicroscopicsilicovolcanoconiosis)
 #define LENGTH 45
+#define BUCKETS 10
 
 // Prototypes
+unsigned long hash(const char *str);
 bool check(const char *word);
 bool load(const char *dictionary);
 unsigned int size(void);
