@@ -5,13 +5,11 @@
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #include "dictionary.h"
 
-// for testing
-#include <stdio.h>
-
-// could be a seperate file?
+// Define linked list (could be a seperate file)
 typedef struct _node
 {
     char word[LENGTH + 1];
@@ -19,9 +17,12 @@ typedef struct _node
 }
 node;
 
+// Init global variables
+unsigned int num_words = 0;
 node *hashtable[BUCKETS] = {NULL};
 
-// hash function from - http://www.cse.yorku.ca/~oz/hash.html (modified to use const input, be case insensitive, and modulo output)
+// Hashes a word into hashtable key
+// from - http://www.cse.yorku.ca/~oz/hash.html (modified to use const input, be case insensitive, and modulo output)
 unsigned long hash(const char *str)
 {
     unsigned long hash = 5381;
@@ -36,12 +37,12 @@ unsigned long hash(const char *str)
 // Returns true if word is in dictionary else false
 bool check(const char *word)
 {
-    // get bucket for word, search through linked list in bucket
+    // Get bucket key from word, search through linked list in bucket
     unsigned long key = hash(word);
     node *cursor = hashtable[key];
     while (cursor != NULL)
     {
-        // if the word is found, return true
+        // If the word is found, return true
         if (strcasecmp(word, cursor->word) == 0)
         {
             return true;
@@ -54,7 +55,7 @@ bool check(const char *word)
 // Loads dictionary into memory, returning true if successful else false
 bool load(const char *dictionary)
 {
-    // open the dictionary file
+    // Open the dictionary file
     FILE* dictionary_file = fopen(dictionary, "r");
     if (!dictionary_file)
     {
@@ -62,7 +63,7 @@ bool load(const char *dictionary)
         return false;
     }
 
-    // build the hashtable (globally defined)
+    // Build the hashtable (globally defined)
     char word[LENGTH + 1];
     unsigned long key;
     while (fscanf(dictionary_file, "%s", word) != EOF)
@@ -70,29 +71,53 @@ bool load(const char *dictionary)
         node *new_node = malloc(sizeof(node));
         if (new_node == NULL)
         {
-            // unload
+            unload();
             return false;
         }
         strcpy(new_node->word, word);
         key = hash(word);
         new_node->next = hashtable[key];
         hashtable[key] = new_node;
+        num_words++; // keeping track of word count here
     }
-    // investigate hash table distribution?
+
+    fclose(dictionary_file);
     return true;
 }
 
 // Returns number of words in dictionary if loaded else 0 if not yet loaded
 unsigned int size(void)
 {
-    // TODO
-    return 0;
+    // For investigating hashtable distribution
+    // for (int i = 0; i < BUCKETS; i++)
+    // {
+    //     printf("Bucket %i: ", i);
+    //     int count = 0;
+    //     node *cursor = hashtable[i];
+    //     while (cursor != NULL)
+    //     {
+    //         count++;
+    //         cursor = cursor->next;
+    //     }
+    //     printf("%i words\n", count);
+    // }
+    return num_words; // ;)
 }
 
 // Unloads dictionary from memory, returning true if successful else false
 bool unload(void)
 {
-    // TODO
-    // check with valgrind
-    return false;
+    // Traverse linked list in each bucket, freeing nodes along the way
+    for (int i = 0; i < BUCKETS; i++)
+    {
+        node *cursor = hashtable[i];
+        while (cursor != NULL)
+        {
+            node *temp = cursor;
+            cursor = cursor->next;
+            free(temp);
+        }
+    }
+    // [DONE] checked with valgrind
+    return true;
 }
