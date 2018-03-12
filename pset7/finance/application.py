@@ -44,6 +44,33 @@ def buy():
     """Buy shares of stock"""
     return apology("TODO")
 
+    # # User reached route via POST (as by submitting a form via POST)
+    # if request.method == "POST":
+
+    #     # Cache form values
+    #     symbol = request.form.get("symbol")
+    #     shares = request.form.get("shares")
+
+    #     # Ensure symbol & shares were submitted
+    #     if not symbol or not shares:
+    #         return apology("must provide a stock symbol and shares", 400)
+
+    #     # Query API for stock data
+    #     stock = lookup(symbol)
+
+    #     # Ensure lookup was successful
+    #     if not stock:
+    #         return apology("invalid symbol", 400)
+
+    #     # flash
+
+    #     # Redirect user to home page
+    #     return redirect("/")
+
+    # # User reached route via GET (as by clicking a link or via redirect)
+    # else:
+    #     return render_template("buy.html")
+
 
 @app.route("/history")
 @login_required
@@ -104,13 +131,87 @@ def logout():
 @login_required
 def quote():
     """Get stock quote."""
-    return apology("TODO")
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        # Cache form values
+        symbol = request.form.get("symbol")
+
+        # Ensure symbol was submitted
+        if not symbol:
+            return apology("must provide a stock symbol, e.g. GOOG", 400)
+
+        # Query API for stock data
+        stock = lookup(symbol)
+
+        # Ensure lookup was successful
+        if not stock:
+            return apology("invalid symbol", 400)
+
+        # Return quoted to quoted page
+        return render_template("quoted.html", stock=stock)
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    else:
+        return render_template("quote.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    return apology("TODO")
+
+    # Forget any user_id
+    session.clear()
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        # Cache form values
+        username = request.form.get("username")
+        password = request.form.get("password")
+        confirmation = request.form.get("confirmation")
+
+        # Ensure username was submitted
+        if not username:
+            return apology("must provide username", 403)
+
+        # Ensure password & password confirmation submitted
+        elif not password or not confirmation:
+            return apology("must provide password and confirmation", 403)
+
+        # Ensure password & confirmation match
+        elif not password == confirmation:
+            return apology("password and confimation must match", 403)
+
+        # Query database for username
+        rows = db.execute("SELECT * FROM users WHERE username = :username",
+                          username=username)
+
+        # Ensure username does not exists
+        if len(rows) != 0:
+            return apology("username is already taken", 403)
+
+        # Create user
+        password_hash = generate_password_hash(password)
+        db.execute("INSERT INTO users (username, hash) VALUES (:username, :hash)",
+                   username=username, hash=password_hash)
+
+        # Remember which user has regsitered (& logged in)
+        rows = db.execute("SELECT * FROM users WHERE username = :username",
+                          username=username)
+        user = rows[0]
+        session["user_id"] = user["id"]
+
+        # Flash to indicate success
+        flash("You've registered successfully!")
+
+        # Redirect user to home page
+        return redirect("/")
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    else:
+        return render_template("register.html")
 
 
 @app.route("/sell", methods=["GET", "POST"])
