@@ -119,7 +119,55 @@ def quote():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    return apology("TODO")
+
+    # Forget any user_id
+    session.clear()
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        # Cache form values
+        username = request.form.get("username")
+        password = request.form.get("password")
+        confirmation = request.form.get("confirmation")
+
+        # Ensure username was submitted
+        if not username:
+            return apology("must provide username", 403)
+
+        # Ensure password and confirmation were submitted and match
+        elif not password or not confirmation:
+            return apology("must provide password and confirmation", 403)
+        if password != confirmation:
+            return apology("password and confirmation must match", 403)
+
+        # Query database for username
+        rows = db.execute("SELECT * FROM users WHERE username = :username",
+                          username=username)
+
+        # Ensure username does not already exist
+        if len(rows) == 1:
+            return apology("username is already taken", 403)
+
+        # Insert new user into users database
+        try:
+            new_id = db.execute("INSERT INTO users (username, hash) VALUES(:username, :hash)",
+                                username=username, hash = generate_password_hash(password))
+            if new_id == None:
+                return apology("SQL schema conflict", 500)
+
+        except RuntimeError:
+            return apology("invalid SQL command", 500)
+
+        # Remember which user has logged in
+        session["user_id"] = new_id
+
+        # Redirect user to home page
+        return redirect("/")
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    else:
+        return render_template("register.html")
 
 
 @app.route("/sell", methods=["GET", "POST"])
