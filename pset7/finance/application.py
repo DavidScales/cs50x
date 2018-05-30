@@ -51,7 +51,78 @@ def index():
 @login_required
 def buy():
     """Buy shares of stock"""
-    return apology("TODO")
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        # Cache form values
+        symbol = request.form.get("symbol")
+        shares = request.form.get("shares")
+
+        # Ensure symbol was submitted
+        if not symbol:
+            return apology("must provide symbol", 403)
+
+        # Ensure that shares was submitted
+        if not shares:
+            return apology("must provide shares", 403)
+
+        # Ensure that shares is a positive integer
+        try:
+            num_shares = int(shares)
+            if num_shares <= 0:
+                raise Exception("invalid value of shares")
+        except:
+            return apology("shares must be a positive integer", 403)
+
+        # Lookup stock via API
+        stock = lookup(symbol)
+
+        # Confirm valid API response
+        if stock == None:
+            return apology("Invalid stock symbol")
+
+        # Calculate purchase total
+        cost = stock["price"] * num_shares
+
+        # Query database for user cashe
+        rows = db.execute("SELECT cash FROM users WHERE id = :id",
+                          id=session["user_id"])
+        cash = rows[0]["cash"]
+
+        # Check that the user has enough cash
+        if cash < cost:
+            return apology("You don't have enough money :(")
+
+        # Update transactions table
+        try:
+            new_transaction = db.execute("INSERT INTO transactions (user, symbol, price, quantity) VALUES(:user, :symbol, :price, :quantity)",
+                                user=session["user_id"], symbol = stock["symbol"], price = stock["price"], quantity = num_shares)
+            if new_transaction == None:
+                return apology("SQL schema conflict", 500)
+
+        except RuntimeError:
+            return apology("invalid SQL command", 500)
+
+        # Update user cash
+        updated_cash = cash - cost
+        try:
+            update = db.execute("UPDATE users SET cash = :updated_cash where id = :id",
+                                updated_cash = updated_cash, id = session["user_id"])
+
+            if update == None:
+               return apology("SQL schema conflict", 500)
+
+        except RuntimeError:
+            return apology("invalid SQL command", 500)
+
+
+        # Return home
+        return redirect("/")
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    else:
+        return render_template("buy.html")
 
 
 @app.route("/history")
