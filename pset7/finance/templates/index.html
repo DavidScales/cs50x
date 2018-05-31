@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block main %}
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for share in shares %}
+                <tr>
+                    <td>{{ share.symbol }}</td>
+                    <td>{{ share.quantity }}</td>
+                    <td>{{ share.price }}</td>
+                    <td>{{ share.total }}</td>
+                </tr>
+            {% endfor %}
+            <tr>
+                <td>Cash</td>
+                <td> - </td>
+                <td> - </td>
+                <td>{{ cash }}</td>
+            </tr>
+            <tr>
+                <td><strong>Total</strong></td>
+                <td></td>
+                <td></td>
+                <td><strong>{{ total }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock %}

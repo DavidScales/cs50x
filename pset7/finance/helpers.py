@@ -4,6 +4,7 @@ import urllib.request
 
 from flask import redirect, render_template, request, session
 from functools import wraps
+from random import random
 
 
 def apology(message, code=400):
@@ -38,45 +39,48 @@ def login_required(f):
 def lookup(symbol):
     """Look up quote for symbol."""
 
-    # Reject symbol if it starts with caret
-    if symbol.startswith("^"):
-        return None
+    # API is unreliable, using placeholder for testing
+    return round(random() * 100, 2)
 
-    # Reject symbol if it contains comma
-    if "," in symbol:
-        return None
+    # # Reject symbol if it starts with caret
+    # if symbol.startswith("^"):
+    #     return None
 
-    # Query Alpha Vantage for quote
-    # https://www.alphavantage.co/documentation/
-    try:
+    # # Reject symbol if it contains comma
+    # if "," in symbol:
+    #     return None
 
-        # GET CSV
-        url = f"https://www.alphavantage.co/query?apikey={os.getenv('API_KEY')}&datatype=csv&function=TIME_SERIES_INTRADAY&interval=1min&symbol={symbol}"
-        webpage = urllib.request.urlopen(url)
+    # # Query Alpha Vantage for quote
+    # # https://www.alphavantage.co/documentation/
+    # try:
 
-        # Parse CSV
-        datareader = csv.reader(webpage.read().decode("utf-8").splitlines())
+    #     # GET CSV
+    #     url = f"https://www.alphavantage.co/query?apikey={os.getenv('API_KEY')}&datatype=csv&function=TIME_SERIES_INTRADAY&interval=1min&symbol={symbol}"
+    #     webpage = urllib.request.urlopen(url)
 
-        # Ignore first row
-        next(datareader)
+    #     # Parse CSV
+    #     datareader = csv.reader(webpage.read().decode("utf-8").splitlines())
 
-        # Parse second row
-        row = next(datareader)
+    #     # Ignore first row
+    #     next(datareader)
 
-        # Ensure stock exists
-        try:
-            price = float(row[4])
-        except:
-            return None
+    #     # Parse second row
+    #     row = next(datareader)
 
-        # Return stock's name (as a str), price (as a float), and (uppercased) symbol (as a str)
-        return {
-            "price": price,
-            "symbol": symbol.upper()
-        }
+    #     # Ensure stock exists
+    #     try:
+    #         price = float(row[4])
+    #     except:
+    #         return None
 
-    except:
-        return None
+    #     # Return stock's name (as a str), price (as a float), and (uppercased) symbol (as a str)
+    #     return {
+    #         "price": price,
+    #         "symbol": symbol.upper()
+    #     }
+
+    # except:
+    #     return None
 
 
 def usd(value):

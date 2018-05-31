@@ -44,8 +44,37 @@ db = SQL("sqlite:///finance.db")
 @login_required
 def index():
     """Show portfolio of stocks"""
-    return apology("TODO")
 
+    # Query database for user shares
+    shares = db.execute("SELECT symbol, SUM(quantity) FROM transactions WHERE user = :user GROUP BY symbol",
+                      user = session["user_id"])
+
+    # Query database for user cashe
+    rows = db.execute("SELECT cash FROM users WHERE id = :id",
+                      id = session["user_id"])
+    cash = rows[0]["cash"]
+
+    # Count total portfolio value
+    total = cash
+
+    for share in shares:
+
+        # Reformat from [{'symbol': 'GOOG', 'SUM(quantity)': 5}, {'symbol': 'NFLX', 'SUM(quantity)': 19}]
+        # to            [{'symbol': 'GOOG', 'quantity':      5}, {'symbol': 'NFLX', 'quantity':      19}]
+        share["quantity"] = share.pop("SUM(quantity)")
+
+        # add current price & total value
+        current_price = lookup(share["symbol"])
+        if current_price == None:
+            share["price"] = "NA"
+            share["total"] = "NA"
+        else:
+            share_total = round(current_price * share["quantity"], 2)
+            share["price"] = usd(current_price)
+            share["total"] = usd(share_total)
+            total += share_total
+
+    return render_template("index.html", shares = shares, total = usd(total), cash = usd(cash))
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
@@ -87,7 +116,7 @@ def buy():
 
         # Query database for user cashe
         rows = db.execute("SELECT cash FROM users WHERE id = :id",
-                          id=session["user_id"])
+                          id = session["user_id"])
         cash = rows[0]["cash"]
 
         # Check that the user has enough cash
@@ -97,7 +126,7 @@ def buy():
         # Update transactions table
         try:
             new_transaction = db.execute("INSERT INTO transactions (user, symbol, price, quantity) VALUES(:user, :symbol, :price, :quantity)",
-                                user=session["user_id"], symbol = stock["symbol"], price = stock["price"], quantity = num_shares)
+                                user = session["user_id"], symbol = stock["symbol"], price = stock["price"], quantity = num_shares)
             if new_transaction == None:
                 return apology("SQL schema conflict", 500)
 
