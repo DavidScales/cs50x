@@ -45,10 +45,6 @@ db = SQL("sqlite:///finance.db")
 def index():
     """Show portfolio of stocks"""
 
-    # Query database for user shares
-    shares = db.execute("SELECT symbol, SUM(quantity) FROM transactions WHERE user = :user GROUP BY symbol",
-                      user = session["user_id"])
-
     # Query database for user cash
     rows = db.execute("SELECT cash FROM users WHERE id = :id",
                       id = session["user_id"])
@@ -57,22 +53,16 @@ def index():
     # Count total portfolio value
     total = cash
 
+    # Query user shares
+    shares = get_shares(db)
+
     for share in shares:
 
-        # Reformat from [{'symbol': 'GOOG', 'SUM(quantity)': 5}, {'symbol': 'NFLX', 'SUM(quantity)': 19}]
-        # to            [{'symbol': 'GOOG', 'quantity':      5}, {'symbol': 'NFLX', 'quantity':      19}]
-        share["quantity"] = share.pop("SUM(quantity)")
-
-        # add current price & total value
-        current_price = lookup(share["symbol"])
-        if current_price == None:
-            share["price"] = "NA"
-            share["total"] = "NA"
-        else:
-            share_total = round(current_price * share["quantity"], 2)
-            share["price"] = usd(current_price)
-            share["total"] = usd(share_total)
-            total += share_total
+        # calculate total & format currency
+        share_total = round(share["price"] * share["quantity"], 2)
+        share["price"] = usd(share["price"])
+        share["total"] = usd(share["total"])
+        total += share_total
 
     return render_template("index.html", shares = shares, total = usd(total), cash = usd(cash))
 
