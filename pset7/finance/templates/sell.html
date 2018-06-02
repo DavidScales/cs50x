@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Sell
+{% endblock %}
+
+{% block main %}
+    <form action="/sell" method="post">
+
+        <div class="form-group">
+            <label for="symbol">Symbol</label>
+            <select class="form-control" name="symbol">
+                {% for share in shares %}
+                   <option>{{ share.symbol }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <input autofocus class="form-control" name="shares" placeholder="0" type="number"/>
+        </div>
+        <button class="btn btn-primary" type="submit">Sell</button>
+    </form>
+{% endblock %}
+
+<select name="text"> <!--Supplement an id here instead of using 'text'-->
+  <option value="first">First Value</option>
+  <option value="second" selected>Second Value</option>
+  <option value="third">Third Value</option>
+</select>

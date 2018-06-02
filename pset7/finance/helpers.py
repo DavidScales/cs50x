@@ -86,3 +86,31 @@ def lookup(symbol):
 def usd(value):
     """Format value as USD."""
     return f"${value:,.2f}"
+
+def get_shares(db):
+    """Return formatted share data from DB and API"""
+    try:
+        # Query database for user shares
+        shares = db.execute("SELECT symbol, SUM(quantity) FROM transactions WHERE user = :user GROUP BY symbol",
+                          user = session["user_id"])
+
+        for share in shares:
+            # Reformat from [{'symbol': 'GOOG', 'SUM(quantity)': 5}, {'symbol': 'NFLX', 'SUM(quantity)': 19}]
+            # to            [{'symbol': 'GOOG', 'quantity':      5}, {'symbol': 'NFLX', 'quantity':      19}]
+            share["quantity"] = share.pop("SUM(quantity)")
+
+            # add current price & total value
+            current_price = lookup(share["symbol"])
+            if current_price == None:
+                share["price"] = "NA"
+                share["total"] = "NA"
+            else:
+                share_total = round(current_price * share["quantity"], 2)
+                share["price"] = current_price
+                share["total"] = share_total
+
+        return shares
+
+    except:
+        raise
+        # return None

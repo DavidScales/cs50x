@@ -7,7 +7,7 @@ from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, lookup, usd
+from helpers import apology, login_required, lookup, usd, get_shares
 
 # Ensure environment variable is set
 if not os.environ.get("API_KEY"):
@@ -49,7 +49,7 @@ def index():
     shares = db.execute("SELECT symbol, SUM(quantity) FROM transactions WHERE user = :user GROUP BY symbol",
                       user = session["user_id"])
 
-    # Query database for user cashe
+    # Query database for user cash
     rows = db.execute("SELECT cash FROM users WHERE id = :id",
                       id = session["user_id"])
     cash = rows[0]["cash"]
@@ -297,8 +297,85 @@ def register():
 @login_required
 def sell():
     """Sell shares of stock"""
-    return apology("TODO")
 
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        # Cache form values
+        symbol = request.form.get("symbol")
+        shares = request.form.get("shares")
+
+        # Ensure symbol was submitted
+        if not symbol:
+            return apology("must provide symbol", 403)
+
+        # Ensure that shares was submitted
+        if not shares:
+            return apology("must provide shares", 403)
+
+        # Ensure that shares is a positive integer
+        try:
+            num_shares = int(shares)
+            if num_shares <= 0:
+                raise Exception("invalid value of shares")
+        except:
+            return apology("shares must be a positive integer", 403)
+
+        # Query user shares
+        user_shares = get_shares(db)
+
+        # Ensure that the user has the share that they are trying to sell
+        try:
+            share = [share for share in user_shares if share["symbol"] == symbol][0]
+            print(share)
+        except:
+            return apology("You don't have that stock")
+
+        # Ensure that the user has enough shares to sell
+        if share["quantity"] < num_shares:
+            return apology("You don't have enough shares to sell")
+
+        # Calculate cash from sale
+        profit = share["price"] * num_shares
+
+        # Query database for user cashe
+        rows = db.execute("SELECT cash FROM users WHERE id = :id",
+                          id = session["user_id"])
+        cash = rows[0]["cash"]
+
+        # Update user cash
+        updated_cash = cash + profit
+
+        try:
+            update = db.execute("UPDATE users SET cash = :updated_cash where id = :id",
+                                updated_cash = updated_cash, id = session["user_id"])
+
+            if update == None:
+              return apology("SQL schema conflict", 500)
+
+        except RuntimeError:
+            return apology("invalid SQL command", 500)
+
+        # Update transactions table
+        try:
+            new_transaction = db.execute("INSERT INTO transactions (user, symbol, price, quantity) VALUES(:user, :symbol, :price, :quantity)",
+                                user = session["user_id"], symbol = share["symbol"], price = share["price"], quantity = -num_shares)
+            if new_transaction == None:
+                return apology("SQL schema conflict", 500)
+
+        except RuntimeError:
+            return apology("invalid SQL command", 500)
+
+        # Return home
+        return redirect("/")
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    else:
+        # Query user shares
+        user_shares = get_shares(db)
+        print(user_shares)
+
+        return render_template("sell.html", shares = user_shares)
 
 def errorhandler(e):
     """Handle error"""
