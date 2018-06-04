@@ -148,7 +148,20 @@ def buy():
 @login_required
 def history():
     """Show history of transactions"""
-    return apology("TODO")
+
+    # Query user transactions from transactions DB
+    transactions = db.execute("SELECT * FROM transactions WHERE user=:user_id",
+                              user_id = session["user_id"])
+
+    for share in transactions:
+
+        # calculate total & format currency
+        share_total = round(share["price"] * share["quantity"], 2)
+        share["price"] = usd(share["price"])
+        share["total"] = usd(share_total)
+
+    # Render table with transactions
+    return render_template("history.html", transactions = transactions)
 
 
 @app.route("/login", methods=["GET", "POST"])
