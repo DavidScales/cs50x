@@ -295,6 +295,48 @@ def register():
     else:
         return render_template("register.html")
 
+@app.route("/change", methods=["GET", "POST"])
+@login_required
+def change():
+    """Change user password"""
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        # Cache form values
+        old_password = request.form.get("old-password")
+        new_password = request.form.get("new-password")
+        confirmation = request.form.get("confirmation")
+
+        # Ensure old password was submitted
+        if not old_password:
+            return apology("must provide existing password", 403)
+
+        # Ensure password and confirmation were submitted and match
+        elif not new_password or not confirmation:
+            return apology("must provide new password and confirmation", 403)
+        if new_password != confirmation:
+            return apology("new password and confirmation must match", 403)
+
+        # Query database for user
+        user = db.execute("SELECT * FROM users WHERE id = :id",
+                          id=session["user_id"])[0]
+
+        # Ensure that existing password is correct
+        if not check_password_hash(user["hash"], old_password):
+            return apology("Old password is not correct")
+
+        # Update password
+        update = db.execute("UPDATE users SET hash = :hash WHERE id = :id",
+                            hash = generate_password_hash(new_password), id = session["user_id"])
+
+        # Redirect user to home page
+        return redirect("/")
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    else:
+        return render_template("change.html")
+
 
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
